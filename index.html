@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <main class="container">
+
+        <section class="crud">
+            <h1 class="crud__title">REGISTRO CLIENTES</h1>
+
+            <form id="formRegister" class="crud__form">
+                <div class="form__inputs">
+                    <input type="text" placeholder="nombre" id="nombreInput" class="form__input" required>
+                    <input type="tel" placeholder="telefono" id="telefonoInput" class="form__input" maxlength="9" required>
+                    <button type="submit" id="submitButton" class="button button--primary">Agregar</button>
+            
+                    <button class="button button--secondary" data-section="registro" onclick="navigateTo('registro')">Registro Clientes</button>
+                    <button class="button button--secondary" data-section="caja" onclick="navigateTo('caja')">Caja Clientes</button>
+                    <button class="button button--secondary" data-section="almacen" onclick="navigateTo('almacen')">Almacén Clientes</button>
+                </div>
+            </form>
+
+            <table id="registroTable" class="crud__table">
+                <thead>
+                    <tr>
+                        <th class="table__header">Nombre</th>
+                        <th class="table__header">Telefono</th>
+                        <th class="table__header">Opciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="table__body">
+                </tbody>
+            </table>
+
+            
+            <table id="cajaTable" class="crud__table hidden">
+                <thead>
+                    <tr>
+                        <th class="table__header">Nombre</th>
+                        <th class="table__header">Monto</th>
+                        <th class="table__header">Opciones</th>
+                    </tr>
+                </thead>
+                <tbody id="cajaBody" class="table__body">
+                </tbody>
+            </table>
+
+            <table id="almacenTable" class="crud__table hidden">
+                <thead>
+                    <tr>
+                        <th class="table__header">Producto</th>
+                        <th class="table__header">Cantidad</th>
+                        <th class="table__header">Opciones</th>
+                    </tr>
+                </thead>
+                <tbody id="almacenBody" class="table__body">
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+    <script>
+        function saveDataToLocalStorage(key, data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+
+        function loadDataFromLocalStorage(key) {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : [];
+        }
+
+        function renderTable(key, tableBodyId) {
+            const data = loadDataFromLocalStorage(key);
+            const tableBody = document.getElementById(tableBodyId);
+            tableBody.innerHTML = ''; 
+
+            data.forEach((item, index) => {
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${item.nombre}</td>
+                    <td>${item.telefono || item.monto || item.cantidad}</td>
+                    <td>
+                        <button class="button button--edit" onclick="editRow('${key}', ${index}, '${tableBodyId}')">Editar</button>
+                        <button class="button button--delete" onclick="deleteRow('${key}', ${index}, '${tableBodyId}')">Eliminar</button>
+                    </td>
+                `;
+                tableBody.appendChild(newRow);
+            });
+        }
+
+        function addDataToTable(key, tableBodyId, data) {
+            const currentData = loadDataFromLocalStorage(key);
+            currentData.push(data);
+            saveDataToLocalStorage(key, currentData);
+            renderTable(key, tableBodyId);
+        }
+
+        function deleteRow(key, index, tableBodyId) {
+            const data = loadDataFromLocalStorage(key);
+            data.splice(index, 1); 
+            saveDataToLocalStorage(key, data);
+            renderTable(key, tableBodyId);
+        }
+
+        function editRow(key, index, tableBodyId) {
+            const data = loadDataFromLocalStorage(key);
+            const item = data[index];
+
+            document.getElementById('nombreInput').value = item.nombre;
+            document.getElementById('telefonoInput').value = item.telefono || item.monto || item.cantidad;
+
+            deleteRow(key, index, tableBodyId);
+        }
+
+        function navigateTo(section) {
+            document.getElementById('registroTable').classList.add('hidden');
+            document.getElementById('cajaTable').classList.add('hidden');
+            document.getElementById('almacenTable').classList.add('hidden');
+
+            const title = document.querySelector('.crud__title');
+            if (section === 'registro') {
+                document.getElementById('registroTable').classList.remove('hidden');
+                title.textContent = 'REGISTRO CLIENTES';
+            } else if (section === 'caja') {
+                document.getElementById('cajaTable').classList.remove('hidden');
+                title.textContent = 'CAJA CLIENTES';
+            } else if (section === 'almacen') {
+                document.getElementById('almacenTable').classList.remove('hidden');
+                title.textContent = 'ALMACÉN CLIENTES';
+            }
+        }
+
+        document.getElementById('formRegister').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const nombre = document.getElementById('nombreInput').value;
+            const telefono = document.getElementById('telefonoInput').value;
+
+            if (!document.getElementById('registroTable').classList.contains('hidden')) {
+                addDataToTable('registroData', 'tableBody', { nombre, telefono });
+            } else if (!document.getElementById('cajaTable').classList.contains('hidden')) {
+                addDataToTable('cajaData', 'cajaBody', { nombre, monto: telefono });
+            } else if (!document.getElementById('almacenTable').classList.contains('hidden')) {
+                addDataToTable('almacenData', 'almacenBody', { nombre, cantidad: telefono });
+            }
+
+            document.getElementById('formRegister').reset();
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            renderTable('registroData', 'tableBody');
+            renderTable('cajaData', 'cajaBody');
+            renderTable('almacenData', 'almacenBody');
+        });
+
+        document.getElementById('telefonoInput').addEventListener('input', function (event) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    </script>
+    <script src="app.js"></script>
+</body>
+</html>
